@@ -64,7 +64,7 @@ The request data will be set accordingly::
 We can now simulate sending data back to the client::
 
   $ request.receive(404, "Sorry, I have no idea what you're talking about.");
-  Received Response: 404 Not Found
+  Received response: 404 Not Found
   Response body: Sorry, I have no idea what you're talking about.
 
 
