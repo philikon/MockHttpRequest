@@ -3,7 +3,7 @@ MockHttpRequest
 
 This JavaScript module provides a mock implementation of
 XMLHttpRequest_ for unit testing.  In nearly all ways it behaves like
-a regular XMLHttpRequest_ (with supports for `Progress Events`_),
+a regular XMLHttpRequest_ (with support for `Progress Events`_),
 except of course it doesn't open a network connection.  Instead it
 exposes the relevant data through the following extra attributes and
 methods:
