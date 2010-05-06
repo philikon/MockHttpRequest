@@ -12,10 +12,14 @@ function catches (exception, func) {
 
 /*
  * Returns a callable that counts how often it was invoked.
+ * It can optionally wrap around an existing function.
  */
-function countCalls() {
+function countCalls(inner) {
     function func () {
         func.callCount += 1;
+        if (typeof inner === "function") {
+            inner.apply(this, arguments);
+        }
     };
     func.callCount = 0;
     return func;
@@ -342,53 +346,46 @@ function makeRequest (callback, errback) {
 
 test("Simple request", function () {
     var server = new MockHttpServer();
-
-    var handleCalled = 0;
-    server.handle = function (request) {
-        handleCalled += 1;
+    server.handle = countCalls(function (request) {
         equals(request.readyState, request.OPENED, "Received open request");
         equals(request.requestText, "Hey meatbag!", "Received request body");
 
         request.receive(200, "Bite my shiny metal a**");
-    };
+    });
 
     server.start();
     var onload = countCalls();
     makeRequest(onload);
     server.stop();
 
-    equals(handleCalled, 1, "One request received");
+    equals(server.handle.callCount, 1, "One request received");
     equals(onload.callCount, 1, "onload called exactly once");
 });
 
 test("Simple request, handler directly passed", function () {
-    var handleCalled = 0;
-    var server = new MockHttpServer(function (request) {
-        handleCalled += 1;
+    var server = new MockHttpServer(countCalls(function (request) {
         equals(request.readyState, request.OPENED, "Received open request");
         equals(request.requestText, "Hey meatbag!", "Received request body");
 
         request.receive(200, "Bite my shiny metal a**");
-    });
+    }));
 
     server.start();
     var onload = countCalls();
     makeRequest(onload);
     server.stop();
 
-    equals(handleCalled, 1, "One request received");
+    equals(server.handle.callCount, 1, "One request received");
     equals(onload.callCount, 1, "onload called exactly once");
 });
 
 test("Multiple requests", function () {
-    var handleCalled = 0;
-    var server = new MockHttpServer(function (request) {
-        handleCalled += 1;
+    var server = new MockHttpServer(countCalls(function (request) {
         equals(request.readyState, request.OPENED, "Received open request");
         equals(request.requestText, "Hey meatbag!", "Received request body");
 
         request.receive(200, "Bite my shiny metal a**");
-    });
+    }));
 
     server.start();
     var onload = countCalls();
@@ -397,25 +394,23 @@ test("Multiple requests", function () {
     makeRequest(onload);
     server.stop();
 
-    equals(handleCalled, 3, "Three requests received");
+    equals(server.handle.callCount, 3, "Three requests received");
     equals(onload.callCount, 3, "onload called exactly three times");
 });
 
 test("Network error", function () {
-    var handleCalled = 0;
-    var server = new MockHttpServer(function (request) {
-        handleCalled += 1;
+    var server = new MockHttpServer(countCalls(function (request) {
         equals(request.readyState, request.OPENED, "Received open request");
         equals(request.requestText, "Hey meatbag!", "Received request body");
 
         request.err("NETWORK_ERR");
-    });
+    }));
 
     server.start();
     var onerror = countCalls();
     makeRequest(undefined, onerror);
     server.stop();
 
-    equals(handleCalled, 1, "One request received");
+    equals(server.handle.callCount, 1, "One request received");
     equals(onerror.callCount, 1, "onerror called exactly once");
 });
