@@ -1,5 +1,3 @@
-module("MockHttpRequest");
-
 /*
  * Call 'func' and assert that 'exception' was raised.
  */
@@ -11,6 +9,20 @@ function catches (exception, func) {
         same(ex, exception, "Correct exception caught");
     }
 }
+
+/*
+ * Returns a callable that counts how often it was invoked.
+ */
+function countCalls() {
+    function func () {
+        func.callCount += 1;
+    };
+    func.callCount = 0;
+    return func;
+}
+
+
+module("MockHttpRequest");
 
 test("Initial state", function () {
     var request = new MockHttpRequest();
@@ -161,20 +173,13 @@ test("send(): HEAD, GET", function () {
 });
 
 test("send(): with data, onsend()", function () {
-    var request;
-
-    request = new MockHttpRequest();
-
-    var sendCalled = 0;
-    request.onsend = function () {
-        sendCalled += 1;
-    };
-
+    var request = new MockHttpRequest();
+    request.onsend = countCalls();
     request.open("POST", "http://some.host/path");
     request.send("Hey meatbag!");
 
     equals(request.requestText, "Hey meatbag!", "Request body is passed");
-    equals(sendCalled, 1, "onsend was called exactly once");
+    equals(request.onsend.callCount, 1, "onsend was called exactly once");
 });
 
 test("abort(): before receiving data", function () {
@@ -182,20 +187,14 @@ test("abort(): before receiving data", function () {
     request.open("POST", "http://some.host/path");
     request.setRequestHeader("Content-Type", "application/robot");
     request.send("Hey meatbag!");
-
-    var abortCalled = 0;
-    request.onabort = function () {
-        abortCalled += 1;
-    };
-    var readyStateChangeCalled = 0;
-    request.onreadystatechange = function () {
-        readyStateChangeCalled += 1;
-    };
+    request.onabort = countCalls();
+    request.onreadystatechange = countCalls();
     request.abort();
 
     equals(request.readyState, request.UNSENT, "State is UNSENT after abort");
-    equals(abortCalled, 1, "onabort() was called once.");
-    equals(readyStateChangeCalled, 1, "onreadystatechange() was called once");
+    equals(request.onabort.callCount, 1, "onabort() was called once.");
+    equals(request.onreadystatechange.callCount, 1,
+           "onreadystatechange() was called once");
     equals(request.getRequestHeader("Content-Type"), undefined,
            "Request headers are cleared");
     equals(request.requestText, undefined, "Request body is cleared");
@@ -234,15 +233,8 @@ test("receive()", function () {
     request.onreadystatechange = function () {
         states.push(request.readyState);
     };
-    var progressCalled = 0;
-    request.onprogress = function () {
-        progressCalled += 1;
-    };
-    var loadCalled = 0;
-    request.onload = function () {
-        loadCalled += 1;
-    };
-
+    request.onprogress = countCalls();
+    request.onload = countCalls();
     request.receive(200, "Yes, Bender?");
 
     equals(request.readyState, request.DONE, "State is DONE after receive");
@@ -252,8 +244,8 @@ test("receive()", function () {
 
     same(states, [request.HEADERS_RECEIVED, request.LOADING, request.DONE],
          "All states are visited in correct order");
-    ok(progressCalled, "onprogress() was called at least once");
-    equals(loadCalled, 1, "onload() was called exactly once");
+    ok(request.onprogress.callCount, "onprogress() was called at least once");
+    equals(request.onload.callCount, 1, "onload() was called exactly once");
 });
 
 test("err(): invalid state", function () {
@@ -273,35 +265,26 @@ test("err(): async", function () {
     request.open("POST", "http://some.host/path");
     request.setRequestHeader("Content-Type", "application/robot");
     request.send("Hey meatbag!");
-
-    var errorCalled = 0;
-    request.onerror = function () {
-        errorCalled += 1;
-    };
-
+    request.onerror = countCalls();
     request.err("NETWORK_ERR");
 
     equals(request.readyState, request.DONE, "State is DONE after error");
     equals(request.responseText, null, "Response body is cleared");
-    equals(errorCalled, 1, "onerror() was called exactly once");
+    equals(request.onerror.callCount, 1, "onerror() was called exactly once");
 });
 
 test("err(): synchronous", function () {
     var request = new MockHttpRequest();
     request.open("GET", "http://some.host/path", false);
     request.send();
-
-    var errorCalled = 0;
-    request.onerror = function () {
-        errorCalled += 1;
-    };
+    request.onerror = countCalls();
 
     catches("NETWORK_ERR", function () {
         request.err("NETWORK_ERR");
     });
     equals(request.readyState, request.DONE, "State is DONE after error");
     equals(request.responseText, null, "Response body is cleared");
-    equals(errorCalled, 0, "onerror() wasn't called");
+    equals(request.onerror.callCount, 0, "onerror() wasn't called");
 });
 
 test("getResponseHeader(): invalid state", function () {
@@ -370,14 +353,12 @@ test("Simple request", function () {
     };
 
     server.start();
-    var loadCalled = 0;
-    makeRequest(function () {
-        loadCalled += 1;
-    });
+    var onload = countCalls();
+    makeRequest(onload);
     server.stop();
 
     equals(handleCalled, 1, "One request received");
-    equals(loadCalled, 1, "onload called exactly once");
+    equals(onload.callCount, 1, "onload called exactly once");
 });
 
 test("Simple request, handler directly passed", function () {
@@ -391,14 +372,12 @@ test("Simple request, handler directly passed", function () {
     });
 
     server.start();
-    var loadCalled = 0;
-    makeRequest(function () {
-        loadCalled += 1;
-    });
+    var onload = countCalls();
+    makeRequest(onload);
     server.stop();
 
     equals(handleCalled, 1, "One request received");
-    equals(loadCalled, 1, "onload called exactly once");
+    equals(onload.callCount, 1, "onload called exactly once");
 });
 
 test("Multiple requests", function () {
@@ -412,17 +391,14 @@ test("Multiple requests", function () {
     });
 
     server.start();
-    var loadCalled = 0;
-    function onload () {
-        loadCalled += 1;
-    };
+    var onload = countCalls();
     makeRequest(onload);
     makeRequest(onload);
     makeRequest(onload);
     server.stop();
 
     equals(handleCalled, 3, "Three requests received");
-    equals(loadCalled, 3, "onload called exactly three times");
+    equals(onload.callCount, 3, "onload called exactly three times");
 });
 
 test("Network error", function () {
@@ -436,12 +412,10 @@ test("Network error", function () {
     });
 
     server.start();
-    var errorCalled = 0;
-    makeRequest(undefined, function () {
-        errorCalled += 1;
-    });
+    var onerror = countCalls();
+    makeRequest(undefined, onerror);
     server.stop();
 
     equals(handleCalled, 1, "One request received");
-    equals(errorCalled, 1, "onerror called exactly once");
+    equals(onerror.callCount, 1, "onerror called exactly once");
 });
