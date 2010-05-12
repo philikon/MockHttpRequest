@@ -12,6 +12,13 @@ methods:
     These attributes correspond to the arguments of the ``open()``
     method.
 
+``urlParts``
+    Object representing individual parts of the URL passed to
+    ``open()``, e.g. ``protocol``, ``host``, ``port``, ``path``,
+    ``query``, ``anchor``.  If present, the query string (``query``)
+    is parsed and its elements are available from the ``queryKey``
+    property.
+
 ``requestText``
     This attribute will contain the request body that was passed to
     the ``send()`` method.
@@ -30,6 +37,10 @@ methods:
 
 ``err(exception)``
     Simulate a request error, such as ``NETWORK_ERR``.
+
+``authenticate(user, password)``
+    Verify HTTP credentials passed to ``open()``, inserted into the
+    URL, or sent via the ``Authorization`` header (in that order).
 
 
 Simple example
