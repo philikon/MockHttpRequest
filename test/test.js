@@ -100,6 +100,21 @@ test("open(): explicit arguments", function () {
     equals(request.readyState, request.OPENED, "readyState is OPENED");
 });
 
+test("open(): URL elements", function () {
+    var request = new MockHttpRequest();
+    request.open("get", "https://frodo:preciousss@some.host/path/to/file?foo=bar&zeit=geist#hashpipe");
+    equals(request.urlParts.protocol, "https");
+    equals(request.urlParts.userInfo, "frodo:preciousss");
+    equals(request.urlParts.user, "frodo");
+    equals(request.urlParts.password, "preciousss");
+    equals(request.urlParts.host, "some.host");
+    equals(request.urlParts.port, "");
+    equals(request.urlParts.path, "/path/to/file");
+    equals(request.urlParts.query, "foo=bar&zeit=geist");
+    same(request.urlParts.queryKey, {foo: "bar", zeit: "geist"});
+    equals(request.urlParts.anchor, "hashpipe");
+});
+
 test("setRequestHeader(): invalid headers", function () {
     var request = new MockHttpRequest();
     request.open("GET", "http://some.host/path");
