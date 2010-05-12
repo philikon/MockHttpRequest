@@ -344,6 +344,37 @@ test("getResponseHeader() et.al.", function () {
            "getAllResponseHeaders");
 });
 
+test("authenticate(): parameters to open()", function () {
+    var request = new MockHttpRequest();
+    request.open("GET", "http://bender:bitemyshiny@some.host/path",
+                 true, "frodo", "preciousss");
+    request.setRequestHeader('Authorization',
+                             'Basic ' + btoa("bender:rodriguez"));
+    ok(request.authenticate("frodo", "preciousss"));
+    ok(!request.authenticate("bender", "bitemyshiny"));
+    ok(!request.authenticate("bender", "rodriguez"));
+});
+
+test("authenticate(): URL parameters", function () {
+    var request = new MockHttpRequest();
+    request.open("GET", "http://bender:bitemyshiny@some.host/path", true);
+    request.setRequestHeader('Authorization',
+                             'Basic ' + btoa("bender:rodriguez"));
+    ok(!request.authenticate("frodo", "preciousss"));
+    ok(request.authenticate("bender", "bitemyshiny"));
+    ok(!request.authenticate("bender", "rodriguez"));
+});
+
+test("authenticate(): Authorization header (Basic auth)", function () {
+    var request = new MockHttpRequest();
+    request.open("GET", "http://some.host/path", true);
+    request.setRequestHeader('Authorization',
+                             'Basic ' + btoa("bender:rodriguez"));
+    ok(!request.authenticate("frodo", "preciousss"));
+    ok(!request.authenticate("bender", "bitemyshiny"));
+    ok(request.authenticate("bender", "rodriguez"));
+});
+
 
 module("MockHttpServer");
 
