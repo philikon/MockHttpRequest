@@ -159,6 +159,14 @@ test("setRequestHeader() and getRequestHeader()", function () {
            "Case insensitivity");
 });
 
+test("setRequestHeader(): multiple values", function() {
+    var request = new MockHttpRequest();
+    request.open("GET", "http://some.host/path");
+    request.setRequestHeader("Accept", "text/html");
+    request.setRequestHeader("Accept", "application/xhtml+xml");
+    equals(request.getRequestHeader("Accept"), "text/html, application/xhtml+xml");
+});
+
 test("send(): invalid state", function () {
     var request;
 
