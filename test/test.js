@@ -308,8 +308,9 @@ test("receive() XML", function () {
                     '</payload>', "Response body");
 
     ok(request.responseXML, 'XML arrived');
-    equals(request.responseXML.childNodes.length, 1 ,'xml content ok');
-    equals(request.responseXML.childNodes[0].tagName, 'payload', 'xml content ok');
+    // difference in length because some browsers parse in the comments while others not
+    ok(request.responseXML.childNodes.length == 1 || request.responseXML.childNodes.length == 2, 'xml content ok');
+    equals(request.responseXML.childNodes[request.responseXML.childNodes.length - 1].tagName, 'payload', 'xml content ok');
 
     same(states, [request.HEADERS_RECEIVED, request.LOADING, request.DONE],
          "All states are visited in correct order");
