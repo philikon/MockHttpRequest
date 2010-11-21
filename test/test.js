@@ -237,6 +237,7 @@ test("abort(): after receiving data", function () {
 
     equals(request.readyState, request.UNSENT, "State is UNSENT after abort");
     equals(request.responseText, null, "Response body is cleared");
+    equals(request.responseXML, null, 'xml response body is cleared');
 });
 
 test("receive(): invalid state", function () {
@@ -268,11 +269,207 @@ test("receive()", function () {
     equals(request.status, 200, "HTTP status");
     equals(request.statusText, "200 OK", "HTTP status text");
     equals(request.responseText, "Yes, Bender?", "Response body");
+    equals(request.responseXML, null, 'xml response body is cleared');
 
     same(states, [request.HEADERS_RECEIVED, request.LOADING, request.DONE],
          "All states are visited in correct order");
     ok(request.onprogress.callCount, "onprogress() was called at least once");
     equals(request.onload.callCount, 1, "onload() was called exactly once");
+});
+
+test("receive() XML", function () {
+    var request = new MockHttpRequest();
+    request.open("POST", "http://some.host/path");
+    request.send("Hey meatbag!");
+
+    var states = [];
+    request.onreadystatechange = function () {
+        states.push(request.readyState);
+    };
+    request.onprogress = countCalls();
+    request.onload = countCalls();
+    request.receive(200, '<?xml version="1.0" encoding="utf-8" ?>' +
+                    '<payload>' +
+                        '<!--  -->' +
+                        '<command day="nice">Beautiful</command>' +
+                        '<command day="nicer">Beautiful</command>' +
+                        '<command day="nicest">Beautiful</command>' +
+                    '</payload>');
+
+    equals(request.readyState, request.DONE, "State is DONE after receive");
+    equals(request.status, 200, "HTTP status");
+    equals(request.statusText, "200 OK", "HTTP status text");
+    equals(request.responseText,  '<?xml version="1.0" encoding="utf-8" ?>' +
+                    '<payload>' +
+                        '<!--  -->' +
+                        '<command day="nice">Beautiful</command>' +
+                        '<command day="nicer">Beautiful</command>' +
+                        '<command day="nicest">Beautiful</command>' +
+                    '</payload>', "Response body");
+
+    ok(request.responseXML, 'XML arrived');
+    console.log(request.responseXML);
+    window.LOTETU = request.responseXML;
+    equals(request.responseXML.childNodes.length, 1 ,'xml content ok');
+    equals(request.responseXML.childNodes[0].tagName, 'payload', 'xml content ok');
+
+    same(states, [request.HEADERS_RECEIVED, request.LOADING, request.DONE],
+         "All states are visited in correct order");
+    ok(request.onprogress.callCount, "onprogress() was called at least once");
+    equals(request.onload.callCount, 1, "onload() was called exactly once");
+});
+
+test("receive() wrong XML", function () {
+    var request = new MockHttpRequest();
+    request.open("POST", "http://some.host/path");
+    request.send("Hey meatbag!");
+
+    var states = [];
+    request.onreadystatechange = function () {
+        states.push(request.readyState);
+    };
+    request.onprogress = countCalls();
+    request.onload = countCalls();
+    request.receive(200, '<?xml version="1.0" encoding="utf-8" ?>' +
+                    '<<payload> Wicked! <<');
+
+    equals(request.readyState, request.DONE, "State is DONE after receive");
+    equals(request.status, 200, "HTTP status");
+    equals(request.statusText, "200 OK", "HTTP status text");
+    equals(request.responseText, '<?xml version="1.0" encoding="utf-8" ?>' +
+                    '<<payload> Wicked! <<'); 
+    
+    equals(request.responseXML, null, 'no XML arrived');
+
+    same(states, [request.HEADERS_RECEIVED, request.LOADING, request.DONE],
+         "All states are visited in correct order");
+    ok(request.onprogress.callCount, "onprogress() was called at least once");
+    equals(request.onload.callCount, 1, "onload() was called exactly once");
+});
+
+test("receive() XML null body", function () {
+    var request = new MockHttpRequest();
+    request.open("POST", "http://some.host/path");
+    request.send("Hey meatbag!");
+
+    var states = [];
+    request.onreadystatechange = function () {
+        states.push(request.readyState);
+    };
+    request.onprogress = countCalls();
+    request.onload = countCalls();
+    request.receive(200, null);
+
+    equals(request.readyState, request.DONE, "State is DONE after receive");
+    equals(request.status, 200, "HTTP status");
+    equals(request.statusText, "200 OK", "HTTP status text");
+    equals(request.responseText, null); 
+    
+    equals(request.responseXML, null, 'no XML arrived');
+
+    same(states, [request.HEADERS_RECEIVED, request.LOADING, request.DONE],
+         "All states are visited in correct order");
+    ok(request.onprogress.callCount, "onprogress() was called at least once");
+    equals(request.onload.callCount, 1, "onload() was called exactly once");
+});
+
+test("receive() XML wrong response type", function () {
+    var request = new MockHttpRequest();
+    request.open("POST", "http://some.host/path");
+    request.send("Hey meatbag!");
+
+    var states = [];
+    request.onreadystatechange = function () {
+        states.push(request.readyState);
+    };
+    request.onprogress = countCalls();
+    request.onload = countCalls();
+    request.setResponseHeader("Content-Type", "application/robot");
+    request.receive(200, '<?xml version="1.0" encoding="utf-8" ?>' +
+                    '<payload>' +
+                        '<!--  -->' +
+                        '<command day="nice">Beautiful</command>' +
+                        '<command day="nicer">Beautiful</command>' +
+                        '<command day="nicest">Beautiful</command>' +
+                    '</payload>');
+
+    equals(request.readyState, request.DONE, "State is DONE after receive");
+    equals(request.status, 200, "HTTP status");
+    equals(request.statusText, "200 OK", "HTTP status text");
+    equals(request.responseText,  '<?xml version="1.0" encoding="utf-8" ?>' +
+                    '<payload>' +
+                        '<!--  -->' +
+                        '<command day="nice">Beautiful</command>' +
+                        '<command day="nicer">Beautiful</command>' +
+                        '<command day="nicest">Beautiful</command>' +
+                    '</payload>', "Response body");
+
+    equals(request.responseXML, null, 'wrong response header, no xml');
+
+    same(states, [request.HEADERS_RECEIVED, request.LOADING, request.DONE],
+         "All states are visited in correct order");
+    ok(request.onprogress.callCount, "onprogress() was called at least once");
+    equals(request.onload.callCount, 1, "onload() was called exactly once");
+});
+
+test("receive() XML mimetype application/xml", function () {
+    var request = new MockHttpRequest();
+    request.open("POST", "http://some.host/path");
+    request.send("Hey meatbag!");
+
+    request.setResponseHeader("Content-Type", "application/xml");
+    request.receive(200, '<?xml version="1.0" encoding="utf-8" ?>' +
+                    '<payload>' +
+                        '<!--  -->' +
+                        '<command day="nice">Beautiful</command>' +
+                        '<command day="nicer">Beautiful</command>' +
+                        '<command day="nicest">Beautiful</command>' +
+                    '</payload>');
+
+    equals(request.readyState, request.DONE, "State is DONE after receive");
+    equals(request.status, 200, "HTTP status");
+    equals(request.statusText, "200 OK", "HTTP status text");
+    ok(request.responseXML, 'XML arrived');
+});
+
+test("receive() XML mimetype text/xml", function () {
+    var request = new MockHttpRequest();
+    request.open("POST", "http://some.host/path");
+    request.send("Hey meatbag!");
+
+    request.setResponseHeader("Content-Type", "text/xml");
+    request.receive(200, '<?xml version="1.0" encoding="utf-8" ?>' +
+                    '<payload>' +
+                        '<!--  -->' +
+                        '<command day="nice">Beautiful</command>' +
+                        '<command day="nicer">Beautiful</command>' +
+                        '<command day="nicest">Beautiful</command>' +
+                    '</payload>');
+
+    equals(request.readyState, request.DONE, "State is DONE after receive");
+    equals(request.status, 200, "HTTP status");
+    equals(request.statusText, "200 OK", "HTTP status text");
+    ok(request.responseXML, 'XML arrived');
+});
+
+test("receive() XML mimetype ...+xml", function () {
+    var request = new MockHttpRequest();
+    request.open("POST", "http://some.host/path");
+    request.send("Hey meatbag!");
+
+    request.setResponseHeader("Content-Type", "application/robot+xml");
+    request.receive(200, '<?xml version="1.0" encoding="utf-8" ?>' +
+                    '<payload>' +
+                        '<!--  -->' +
+                        '<command day="nice">Beautiful</command>' +
+                        '<command day="nicer">Beautiful</command>' +
+                        '<command day="nicest">Beautiful</command>' +
+                    '</payload>');
+
+    equals(request.readyState, request.DONE, "State is DONE after receive");
+    equals(request.status, 200, "HTTP status");
+    equals(request.statusText, "200 OK", "HTTP status text");
+    ok(request.responseXML, 'XML arrived');
 });
 
 test("err(): invalid state", function () {
