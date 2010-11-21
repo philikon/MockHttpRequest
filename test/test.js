@@ -308,7 +308,6 @@ test("receive() XML", function () {
                     '</payload>', "Response body");
 
     ok(request.responseXML, 'XML arrived');
-    console.log(request.responseXML);
     window.LOTETU = request.responseXML;
     equals(request.responseXML.childNodes.length, 1 ,'xml content ok');
     equals(request.responseXML.childNodes[0].tagName, 'payload', 'xml content ok');
