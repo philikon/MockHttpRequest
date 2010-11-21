@@ -451,6 +451,27 @@ test("receive() XML mimetype text/xml", function () {
     ok(request.responseXML, 'XML arrived');
 });
 
+test("receive() XML mimetype with charset", function () {
+    var request = new MockHttpRequest();
+    request.open("POST", "http://some.host/path");
+    request.send("Hey meatbag!");
+
+    request.setResponseHeader("Content-Type", "text/xml; charset=UTF-8");
+    request.receive(200, '<?xml version="1.0" encoding="utf-8" ?>' +
+                    '<payload>' +
+                        '<!--  -->' +
+                        '<command day="nice">Beautiful</command>' +
+                        '<command day="nicer">Beautiful</command>' +
+                        '<command day="nicest">Beautiful</command>' +
+                    '</payload>');
+
+    equals(request.readyState, request.DONE, "State is DONE after receive");
+    equals(request.status, 200, "HTTP status");
+    equals(request.statusText, "200 OK", "HTTP status text");
+    ok(request.responseXML, 'XML arrived');
+});
+
+
 test("receive() XML mimetype ...+xml", function () {
     var request = new MockHttpRequest();
     request.open("POST", "http://some.host/path");
