@@ -471,8 +471,8 @@ test("receive() XML mimetype with charset", function () {
     ok(request.responseXML, 'XML arrived');
     // difference in length because some browsers parse in the comments while others not
     ok(request.responseXML.childNodes.length == 1 || request.responseXML.childNodes.length == 2, 'xml content ok');
-    equals(request.responseXML.childNodes[request.responseXML.childNodes.length - 1].tagName, 'payload', 'xml content ok');
-    equals(request.responseXML.childNodes[request.responseXML.childNodes.length - 1].childNodes[1].textContent, 'Beautif\u00FCl', 'xml content ok');
+    equals(request.responseXML.lastChild.tagName, 'payload', 'xml content ok');
+    equals(request.responseXML.lastChild.lastChild.firstChild.data, 'Beautif\u00FCl', 'xml content ok');
 });
 
 
