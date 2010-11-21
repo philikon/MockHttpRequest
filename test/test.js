@@ -460,15 +460,21 @@ test("receive() XML mimetype with charset", function () {
     request.receive(200, '<?xml version="1.0" encoding="utf-8" ?>' +
                     '<payload>' +
                         '<!--  -->' +
-                        '<command day="nice">Beautiful</command>' +
-                        '<command day="nicer">Beautiful</command>' +
-                        '<command day="nicest">Beautiful</command>' +
+                        '<command day="nice">Beautif\u00FCl</command>' +
+                        '<command day="nicer">Beautif\u00FCl</command>' +
+                        '<command day="nicest">Beautif\u00FCl</command>' +
                     '</payload>');
 
     equals(request.readyState, request.DONE, "State is DONE after receive");
     equals(request.status, 200, "HTTP status");
     equals(request.statusText, "200 OK", "HTTP status text");
     ok(request.responseXML, 'XML arrived');
+    // difference in length because some browsers parse in the comments while others not
+    ok(request.responseXML.childNodes.length == 1 || request.responseXML.childNodes.length == 2, 'xml content ok');
+    equals(request.responseXML.childNodes[request.responseXML.childNodes.length - 1].tagName, 'payload', 'xml content ok');
+    console.log(request.responseText);
+    console.log(request.responseXML.childNodes[request.responseXML.childNodes.length - 1].childNodes[1])
+    equals(request.responseXML.childNodes[request.responseXML.childNodes.length - 1].childNodes[1].textContent, 'Beautif\u00FCl', 'xml content ok');
 });
 
 
