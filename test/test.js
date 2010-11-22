@@ -65,7 +65,7 @@ test("open(): invalid uses", function () {
         var request = new MockHttpRequest();
         request.open("track", "http://some.host/path");
     });
-})
+});
 
 test("open(): method mangling", function () {
     var request;
@@ -308,9 +308,13 @@ test("receive() XML", function () {
                     '</payload>', "Response body");
 
     ok(request.responseXML, 'XML arrived');
-    // difference in length because some browsers parse in the comments while others not
-    ok(request.responseXML.childNodes.length == 1 || request.responseXML.childNodes.length == 2, 'xml content ok');
-    equals(request.responseXML.childNodes[request.responseXML.childNodes.length - 1].tagName, 'payload', 'xml content ok');
+    // Difference in length because some browsers parse in the comments
+    // while others do not.
+    ok(request.responseXML.childNodes.length == 1
+       || request.responseXML.childNodes.length == 2, 'xml content ok');
+    equals(request.responseXML.childNodes[
+               request.responseXML.childNodes.length - 1].tagName,
+           'payload', 'xml content ok');
 
     same(states, [request.HEADERS_RECEIVED, request.LOADING, request.DONE],
          "All states are visited in correct order");
@@ -336,8 +340,8 @@ test("receive() wrong XML", function () {
     equals(request.status, 200, "HTTP status");
     equals(request.statusText, "200 OK", "HTTP status text");
     equals(request.responseText, '<?xml version="1.0" encoding="utf-8" ?>' +
-                    '<<payload> Wicked! <<'); 
-    
+                    '<<payload> Wicked! <<');
+
     equals(request.responseXML, null, 'no XML arrived');
 
     same(states, [request.HEADERS_RECEIVED, request.LOADING, request.DONE],
@@ -362,8 +366,8 @@ test("receive() XML null body", function () {
     equals(request.readyState, request.DONE, "State is DONE after receive");
     equals(request.status, 200, "HTTP status");
     equals(request.statusText, "200 OK", "HTTP status text");
-    equals(request.responseText, null); 
-    
+    equals(request.responseText, null);
+
     equals(request.responseXML, null, 'no XML arrived');
 
     same(states, [request.HEADERS_RECEIVED, request.LOADING, request.DONE],
